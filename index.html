@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>団地おさんぽマップ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* 机の上の手作り冊子：白い紙のページ＋右端のインデックスタブ。手書き見出しとピンの色で場所の種類を伝える */
+:root{
+  --desk:#d9dedb;
+  --paper:#ffffff;
+  --ink:#232323;
+  --muted:#6f7472;
+  --rule:#e4e7e5;
+  --red:#e0475b;   /* 団地 */
+  --green:#3a9a5c; /* 公園 */
+  --blue:#3b6fc4;  /* 学校 */
+  --orange:#e2802b;/* まち */
+  --hand:"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",cursive;
+  --body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--desk);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6;overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0;padding:0}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px;border-radius:6px}
+img{display:block;max-width:100%}
+
+.app{height:100%;display:flex;flex-direction:column;align-items:center;padding:12px 0 0}
+.book{position:relative;flex:1;min-height:0;width:min(1060px,100%);display:flex;padding:0 0 0 12px}
+.pages{flex:1;min-width:0;position:relative}
+.spread{position:absolute;inset:0;display:none;background:var(--paper);border-radius:6px 0 0 6px;box-shadow:0 10px 30px rgba(40,50,45,.18),0 1px 2px rgba(40,50,45,.2);overflow:auto;-webkit-overflow-scrolling:touch}
+.spread.on{display:block}
+@media (prefers-reduced-motion:no-preference){
+  .spread.in-next{animation:turnN .38s ease-out}
+  .spread.in-prev{animation:turnP .38s ease-out}
+  @keyframes turnN{from{opacity:0;transform:translateX(26px) rotateY(-6deg)}to{opacity:1;transform:none}}
+  @keyframes turnP{from{opacity:0;transform:translateX(-26px) rotateY(6deg)}to{opacity:1;transform:none}}
+}
+.leaves{display:grid;grid-template-columns:1fr;min-height:100%}
+@media (min-width:820px){
+  .leaves.two{grid-template-columns:1fr 1fr}
+  .leaves.two>.leaf:first-child{border-right:1px solid var(--rule);box-shadow:inset -14px 0 18px -16px rgba(0,0,0,.18)}
+}
+.leaf{padding:22px 22px 28px;display:flex;flex-direction:column;gap:22px}
+
+/* index tabs */
+.tabs{flex:0 0 40px;display:flex;flex-direction:column;gap:6px;padding-top:28px}
+.tab{writing-mode:vertical-rl;text-orientation:upright;font-family:var(--hand);font-weight:600;font-size:14px;letter-spacing:.06em;background:#eef1ef;border:1px solid #cfd5d2;border-left:0;border-radius:0 10px 10px 0;padding:12px 7px;display:flex;align-items:center;gap:6px;color:var(--muted);min-height:78px;justify-content:flex-start}
+.tab svg{writing-mode:horizontal-tb;flex:0 0 auto}
+.tab[aria-current="page"]{background:var(--paper);color:var(--ink);box-shadow:4px 4px 10px rgba(40,50,45,.12);margin-left:-1px}
+.tab:nth-child(2){margin-top:6px}
+
+/* footer */
+.foot{width:min(1060px,100%);display:flex;align-items:center;justify-content:space-between;padding:8px 52px 10px 12px;gap:10px}
+.turn{display:flex;align-items:center;gap:4px;font-weight:700;font-size:14px;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.7)}
+.turn[disabled]{opacity:.3;cursor:default}
+.dots{display:flex;gap:6px}
+.dots span{width:7px;height:7px;border-radius:50%;background:#aab3af}
+.dots span.on{background:var(--ink);width:18px;border-radius:4px}
+.likes{font-size:13px;font-weight:700;display:flex;align-items:center;gap:4px;color:var(--red)}
+
+/* cover */
+.cover{height:100%;display:flex;flex-direction:column;justify-content:space-between;padding:clamp(28px,7vw,72px);cursor:pointer;background:
+  radial-gradient(circle at 85% 88%,rgba(224,71,91,.07) 0 140px,transparent 141px),var(--paper)}
+.cover h1{font-family:var(--hand);font-weight:600;font-size:clamp(46px,11vw,92px);line-height:1.25;margin:0;letter-spacing:.06em}
+.cover h1 span{display:block}
+.cover h1 span:nth-child(2){padding-left:.6em}
+.cover h1 span:nth-child(3){padding-left:1.6em;font-size:.62em}
+.cover .walker{display:inline-block;vertical-align:-.08em;width:.9em;height:.9em}
+.cover .place{font-family:var(--hand);font-size:clamp(16px,3.4vw,22px);color:var(--muted)}
+.cover .open{align-self:flex-end;font-family:var(--hand);font-weight:600;font-size:18px;display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--ink);padding-bottom:2px}
+
+/* place blocks */
+.place{display:flex;flex-direction:column;gap:10px}
+.ph{display:flex;align-items:center;gap:6px}
+.ph h2{font-family:var(--hand);font-weight:600;font-size:clamp(22px,4.6vw,28px);line-height:1.25;margin:0;text-wrap:balance}
+.ph .letter{font-family:var(--hand);font-size:14px;color:var(--red);align-self:flex-end;margin:0 4px 2px -4px}
+.sub{font-family:var(--hand);font-size:15px;margin:-6px 0 0 34px;color:#444}
+.photos{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:460px}
+.photos.one{grid-template-columns:minmax(0,1fr);max-width:340px}
+.photos.three .ph-btn:first-child{grid-column:span 2;aspect-ratio:16/9}
+.ph-btn{position:relative;aspect-ratio:4/3;border-radius:22px;overflow:hidden;background:#e9edeb}
+.ph-btn img{width:100%;height:100%;object-fit:cover;transform:scale(1.07);transition:transform .25s}
+.ph-btn:hover img{transform:scale(1.11)}
+.acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.act{font-size:13px;font-weight:700;border:1.5px solid #cdd3d0;border-radius:999px;padding:4px 12px;display:inline-flex;align-items:center;gap:5px;background:#fff}
+.act[aria-pressed="true"]{border-color:var(--red);color:var(--red);background:#fff1f3}
+.act[aria-expanded="true"]{background:#f1f4f2}
+.more{background:#f6f8f7;border-radius:14px;padding:10px 14px;font-size:14px}
+.more[hidden]{display:none}
+.more dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0}
+.more dt{color:var(--muted);font-size:12.5px;padding-top:1px}
+.more dd{margin:0;font-variant-numeric:tabular-nums}
+.more .src{font-size:11.5px;color:var(--muted);margin:6px 0 0}
+.leaf.compact{gap:18px}
+.row-place{display:grid;grid-template-columns:1fr;gap:8px}
+@media (min-width:520px){ .row-place.side{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);align-items:center} }
+
+/* map */
+.mapleaf{padding:14px 14px 18px;gap:10px}
+.maphead{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.maphead h2{font-family:var(--hand);font-weight:600;font-size:24px;margin:0}
+.legend{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;border:1.5px solid #cdd3d0;border-radius:999px;padding:3px 10px 3px 6px;background:#fff}
+.chip[aria-pressed="false"]{opacity:.4}
+.mapbox{position:relative;border-radius:18px;overflow:hidden;border:1px solid var(--rule);width:100%;max-width:max(320px,calc((100vh - 190px) * 600 / 680));margin:0 auto}
+.mapscroll{overflow:auto;max-height:100%;-webkit-overflow-scrolling:touch;background:#eef1ec}
+#map{display:block;width:100%;height:auto}
+.zoom{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:4px}
+.zoom button{width:34px;height:34px;border-radius:10px;background:#fff;border:1px solid #cdd3d0;font-size:18px;font-weight:700}
+.scale{position:absolute;left:10px;bottom:8px;font-size:10.5px;color:var(--muted);background:rgba(255,255,255,.85);padding:1px 6px;border-radius:5px}
+.mpin{cursor:pointer}
+.mpin .lab{font-family:var(--body);font-weight:700;font-size:15px;fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:4.5px;stroke-linejoin:round;pointer-events:none}
+.mpin.sel .head{stroke:var(--ink);stroke-width:2.5}
+.mpin.dim{opacity:.18;pointer-events:none}
+.pop{position:absolute;left:10px;right:10px;bottom:10px;background:#fff;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.18);display:flex;gap:12px;align-items:center;padding:8px;max-width:420px}
+.pop[hidden]{display:none}
+.pop img{width:84px;height:64px;object-fit:cover;border-radius:12px;flex:0 0 auto}
+.pop .t{flex:1;min-width:0}
+.pop .t b{font-family:var(--hand);font-size:18px;display:block;line-height:1.3}
+.pop .t small{color:var(--muted);font-size:12px}
+.pop .go{background:var(--ink);color:#fff;border-radius:999px;padding:7px 12px;font-size:13px;font-weight:700;white-space:nowrap}
+.pop .x{position:absolute;top:4px;right:8px;font-size:18px;color:var(--muted)}
+
+/* route */
+.mapgrid{display:grid;grid-template-columns:1fr;gap:14px;align-items:start}
+@media (min-width:980px){ .mapgrid{grid-template-columns:minmax(0,1fr) 290px} }
+.routes{display:flex;flex-direction:column;gap:10px}
+.routes h3{font-family:var(--hand);font-weight:600;font-size:20px;margin:0}
+.rsel{display:flex;flex-wrap:wrap;gap:6px}
+.rbtn{display:flex;flex-direction:column;align-items:flex-start;text-align:left;border:1.5px solid #cdd3d0;border-radius:14px;padding:6px 12px;background:#fff;flex:1 1 120px}
+.rbtn b{font-family:var(--hand);font-size:16px;line-height:1.3}
+.rbtn small{font-size:11.5px;color:var(--muted);line-height:1.4}
+.rbtn[aria-pressed="true"]{border-color:var(--red);background:#fff1f3}
+.rbtn.off{flex:0 0 auto;justify-content:center;font-size:12.5px;font-weight:700;color:var(--muted)}
+.rmeta{font-size:12.5px;color:var(--muted);margin:0}
+.rstops{list-style:none;margin:0;padding:0;display:grid;gap:6px;position:relative}
+.rstops li{display:flex;align-items:center;gap:8px}
+.rstops .ends{font-size:12.5px;font-weight:700;color:var(--muted);padding-left:6px}
+.stamp{width:30px;height:30px;border-radius:50%;border:2px dashed var(--red);color:var(--red);font-weight:700;font-size:13px;flex:0 0 auto;display:grid;place-items:center;background:#fff}
+.stamp[aria-pressed="true"]{background:var(--red);color:#fff;border-style:solid}
+.stopname{display:flex;align-items:center;gap:8px;flex:1;min-width:0;text-align:left;background:#f6f8f7;border-radius:12px;padding:4px 8px 4px 4px}
+.stopname img{width:52px;height:40px;object-fit:cover;border-radius:9px;flex:0 0 auto}
+.stopname span{display:flex;flex-direction:column;line-height:1.3;min-width:0}
+.stopname b{font-family:var(--hand);font-size:15px}
+.stopname small{font-size:11px;color:var(--muted)}
+.stopname[aria-current="true"]{outline:2px solid var(--ink);outline-offset:-2px}
+#route{fill:none;stroke:var(--red);stroke-width:6;stroke-linecap:round;stroke-linejoin:round;opacity:.85;filter:url(#yarn);pointer-events:none}
+@media (prefers-reduced-motion:no-preference){
+  #route.draw{animation:drawroute 1.6s ease-out forwards}
+  @keyframes drawroute{from{stroke-dashoffset:var(--len)}to{stroke-dashoffset:0}}
+}
+.mpin.off{opacity:.3}
+
+/* end */
+.endleaf{justify-content:center;align-items:flex-start;max-width:560px;margin:0 auto;min-height:100%}
+.endleaf h2{font-family:var(--hand);font-weight:600;font-size:28px;margin:0}
+.liked{list-style:none;padding:0;margin:0;display:grid;gap:8px;width:100%}
+.liked li button{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#f6f8f7;border-radius:14px;padding:8px}
+.liked img{width:72px;height:54px;object-fit:cover;border-radius:10px}
+.liked b{font-family:var(--hand);font-size:18px}
+.empty{color:var(--muted);font-size:14px;margin:0}
+.credit{font-size:12px;color:var(--muted);margin-top:24px}
+
+/* lightbox */
+.lb{position:fixed;inset:0;background:rgba(20,22,21,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;z-index:20;padding:16px}
+.lb[hidden]{display:none}
+.lb img{max-height:72vh;max-width:min(920px,100%);border-radius:18px;object-fit:contain}
+.lb .cap{color:#fff;font-family:var(--hand);font-size:20px}
+.lb .cnt{color:#bbb;font-size:12px}
+.lb .nav{display:flex;gap:10px}
+.lb .nav button{color:#fff;border:1.5px solid rgba(255,255,255,.4);border-radius:999px;padding:6px 16px;font-weight:700}
+.lb .close{position:absolute;top:12px;right:16px;color:#fff;font-size:15px;border:1.5px solid rgba(255,255,255,.4);border-radius:999px;padding:4px 14px}
+
+@media (max-width:520px){
+  .app{padding-top:8px}
+  .book{padding-left:8px}
+  .tabs{flex-basis:34px}
+  .tab{font-size:12.5px;padding:10px 5px;min-height:66px}
+  .leaf{padding:18px 16px 24px}
+  .foot{padding-right:42px;padding-left:8px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="book" id="book">
+    <div class="pages" id="pages"></div>
+    <nav class="tabs" id="tabs" aria-label="インデックス"></nav>
+  </div>
+  <div class="foot">
+    <button class="turn" id="prev" aria-label="前のページ">‹ まえ</button>
+    <div class="dots" id="dots" aria-hidden="true"></div>
+    <span class="likes" id="likeCount" aria-live="polite"></span>
+    <button class="turn" id="next" aria-label="次のページ">つぎ ›</button>
+  </div>
+</div>
+<div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-label="写真">
+  <button class="close" id="lbClose">とじる</button>
+  <img id="lbImg" alt="">
+  <div class="cap" id="lbCap"></div>
+  <div class="cnt" id="lbCnt"></div>
+  <div class="nav"><button id="lbPrev">‹</button><button id="lbNext">›</button></div>
+</div>
+
+<script>
+(function(){
+const COL={danchi:"var(--red)",park:"var(--green)",school:"var(--blue)",town:"var(--orange)"};
+const CATNAME={danchi:"団地",park:"公園",school:"学校",town:"まち"};
+// 位置は冊子の地図（Googleマップをなぞった手描き）をもとにした概略
+const P={
+  A:{cat:"danchi",letter:"A",name:"高洲第二団地",photos:["a1","a2","a3","a4"],x:193,y:243,poly:"128,282 246,201 270,238 151,324",
+     info:[["家賃","47,000〜88,300円／月"],["購入","990万円〜"],["駅まで","歩いて5〜7分"],["そのほか","無印良品×URのリノベーション住戸あり"]]},
+  B:{cat:"danchi",letter:"B",name:"稲毛海岸三丁目団地",photos:["b1","b2","b3","b4"],x:462,y:152,lab:[-58,16,"start"],poly:"354,178 487,52 590,151 456,282",
+     info:[["購入","600〜1,480万円"]]},
+  C:{cat:"danchi",letter:"C",name:"高洲一丁目住宅",photos:["c1","c2","c3","c4"],x:326,y:291,poly:"256,324 349,232 407,304 323,368",
+     info:null},
+  D:{cat:"danchi",letter:"D",name:"UR高洲第一住宅",photos:["d1","d2","d3","d4"],x:366,y:545,poly:"297,591 364,507 421,570 359,654",
+     info:[["家賃","40,800〜85,100円／月"],["駅まで","歩いて6〜20分（棟による）"],["バス","稲毛駅からバス5分＋徒歩7分"]]},
+  sports:{cat:"park",name:"高洲スポーツセンター",photos:["s1","s2","s3","s4"],x:267,y:131,area:"236,152 286,108 318,140 268,184"},
+  inagishi:{cat:"park",name:"稲岸公園",photos:["i1","i2","i3"],x:400,y:40,area:"330,62 372,22 430,22 375,78"},
+  takasu:{cat:"park",name:"高洲公園",photos:["p3","p2","p1"],x:296,y:490,area:"262,500 296,466 330,500 296,534"},
+  pia:{cat:"town",name:"ピアシティ",sub:"サンドラッグ・Seria・魚べい など",photos:["pi1"],x:205,y:66},
+  river:{cat:"town",name:"川",photos:["r1"],x:118,y:150},
+  kojima:{cat:"town",name:"こじま通り",photos:["k1"],x:520,y:423},
+  aeon:{cat:"town",name:"AEON",sub:"イオンマリンピア",photos:["e1","e2"],x:196,y:470},
+  inahama:{cat:"school",name:"千葉市立稲浜中学校",photos:["h1"],x:556,y:212},
+  dai4:{cat:"school",name:"千葉市立高洲第四小学校",photos:["y1"],x:428,y:318},
+  dai3:{cat:"school",name:"千葉市立高洲第三小学校",photos:["t1"],x:200,y:590}
+};
+const STATION=[174,418];
+const COURSES={
+  north:{name:"北コース",sub:"団地A・B・C、公園、学校",stops:["A","sports","inagishi","B","inahama","dai4","C"]},
+  south:{name:"南コース",sub:"団地D、高洲公園、小学校",stops:["aeon","takasu","D","dai3"]}
+};
+const SPREADS=[
+  {id:"cover",tab:null},
+  {id:"map",tab:"地図",tabCat:"town"},
+  {id:"ab",tab:"AB団地",tabCat:"danchi",left:["A"],right:["B"]},
+  {id:"cd",tab:"CD団地",tabCat:"danchi",left:["C"],right:["D"]},
+  {id:"park",tab:"公園",tabCat:"park",left:["sports","inagishi"],right:["takasu"]},
+  {id:"other",tab:"その他",tabCat:"town",left:["pia","river","kojima","aeon"],right:["inahama","dai4","dai3"],compact:true},
+  {id:"end",tab:null}
+];
+const pageOf=id=>SPREADS.findIndex(s=>(s.left||[]).concat(s.right||[]).includes(id));
+
+let likes=[];
+try{likes=JSON.parse(localStorage.getItem("danchi-osanpo-likes")||"[]")}catch(e){}
+const saveLikes=()=>{try{localStorage.setItem("danchi-osanpo-likes",JSON.stringify(likes))}catch(e){}};
+let curCourse=null, stamps={};
+try{stamps=JSON.parse(localStorage.getItem("danchi-osanpo-stamps")||"{}")}catch(e){}
+const visited=id=>!!(curCourse&&stamps[curCourse]&&stamps[curCourse].includes(id));
+function toggleStamp(id){const a=stamps[curCourse]||(stamps[curCourse]=[]);const i=a.indexOf(id);if(i>=0)a.splice(i,1);else a.push(id);
+  try{localStorage.setItem("danchi-osanpo-stamps",JSON.stringify(stamps))}catch(e){}drawMapPins();renderRoutes()}
+function curvePath(pts){let d=`M${pts[0][0]},${pts[0][1]}`;for(let i=1;i<pts.length;i++){const[x0,y0]=pts[i-1],[x1,y1]=pts[i];
+  const mx=(x0+x1)/2+(y1-y0)*0.08,my=(y0+y1)/2-(x1-x0)*0.08;d+=` Q${mx.toFixed(1)},${my.toFixed(1)} ${x1},${y1-14}`}return d}
+function drawRoute(animate){
+  const r=$("#route"); if(!r) return;
+  const sl=$("#startLab"); if(sl) sl.textContent=curCourse?"スタート・ゴール":"";
+  if(!curCourse){r.setAttribute("d","");return}
+  const pts=[[STATION[0],STATION[1]+14]].concat(COURSES[curCourse].stops.map(id=>[P[id].x,P[id].y])).concat([[STATION[0],STATION[1]+14]]);
+  r.setAttribute("d",curvePath(pts));
+  const len=r.getTotalLength(); r.style.setProperty("--len",len); r.style.strokeDasharray=len; r.style.strokeDashoffset=0;
+  r.classList.remove("draw"); if(animate){void r.getBoundingClientRect(); r.classList.add("draw")}
+}
+function renderRoutes(){
+  const box=$("#routes"); if(!box) return;
+  let h=`<h3>おさんぽルート</h3><div class="rsel">${Object.entries(COURSES).map(([k,c])=>`<button class="rbtn" data-course="${k}" aria-pressed="${curCourse===k}"><b>${c.name}</b><small>${c.sub}</small></button>`).join("")}
+    ${curCourse?`<button class="rbtn off" data-course="">ルートを消す</button>`:""}</div>`;
+  if(curCourse){
+    const c=COURSES[curCourse], n=(stamps[curCourse]||[]).length;
+    h+=`<p class="rmeta">稲毛海岸駅から ${c.stops.length}か所をまわって駅にもどります。来た場所の番号をタップ（${n}/${c.stops.length}）</p>
+    <ol class="rstops"><li class="ends">稲毛海岸駅 スタート</li>${c.stops.map((id,i)=>`<li><button class="stamp" data-stamp="${id}" aria-pressed="${visited(id)}" aria-label="${esc(P[id].name)}に来た">${i+1}</button>
+      <button class="stopname" data-stop="${id}" aria-current="${mapSel===id}"><img src="${img(P[id].photos[0])}" alt=""><span><b>${esc(P[id].name)}</b><small>${CATNAME[P[id].cat]}${P[id].letter?" "+P[id].letter:""}</small></span></button></li>`).join("")}
+    <li class="ends">稲毛海岸駅 ゴール</li></ol>`;
+  }
+  box.innerHTML=h;
+  box.querySelectorAll("[data-course]").forEach(b=>b.onclick=()=>{curCourse=b.dataset.course||null;mapSel=null;drawMapPins();showPop();drawRoute(true);renderRoutes()});
+  box.querySelectorAll("[data-stamp]").forEach(b=>b.onclick=()=>toggleStamp(b.dataset.stamp));
+  box.querySelectorAll("[data-stop]").forEach(b=>b.onclick=()=>{mapSel=b.dataset.stop;drawMapPins();showPop();renderRoutes()});
+}
+let cur=0, mapSel=null, mapZoom=1, layers={danchi:1,park:1,school:1,town:1};
+
+const $=s=>document.querySelector(s);
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const img=k=>`img/${k}.jpg`;
+function pinSVG(color,size){return `<svg width="${size}" height="${size*1.25}" viewBox="0 0 24 30" aria-hidden="true"><path d="M12 28.5C12 28.5 3 18.6 3 11.5a9 9 0 0 1 18 0C21 18.6 12 28.5 12 28.5Z" fill="#fff" stroke="${color}" stroke-width="2.2"/><circle cx="12" cy="11.5" r="3.4" fill="none" stroke="${color}" stroke-width="2"/></svg>`}
+
+// ---------- builders ----------
+function placeHTML(id,opts={}){
+  const p=P[id], c=COL[p.cat];
+  const n=p.photos.length, cls=n===1?"one":(n===3?"three":"");
+  const liked=likes.includes(id);
+  let h=`<section class="place" id="pl-${id}">
+    <div class="ph">${pinSVG(c,26)}${p.letter?`<span class="letter">${p.letter}</span>`:""}<h2>${esc(p.name)}</h2></div>
+    ${p.sub?`<p class="sub">${esc(p.sub)}</p>`:""}
+    <div class="photos ${cls}">${p.photos.map((k,i)=>`<button class="ph-btn" data-lb="${id}" data-i="${i}" aria-label="${esc(p.name)}の写真${i+1}を大きく見る"><img src="${img(k)}" alt="" loading="lazy"></button>`).join("")}</div>
+    <div class="acts">
+      <button class="act" data-tomap="${id}">${pinSVG(c,11)} 地図で見る</button>
+      <button class="act" data-like="${id}" aria-pressed="${liked}">${liked?"♥":"♡"} 気になる</button>
+      ${p.cat==="danchi"?`<button class="act" data-more="${id}" aria-expanded="false" aria-controls="more-${id}">くわしく</button>`:""}
+    </div>`;
+  if(p.cat==="danchi"){
+    h+=`<div class="more" id="more-${id}" hidden>${p.info?`<dl>${p.info.map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}</dl>`:`<p style="margin:0">家賃・価格はいま調べています。</p>`}
+      <p class="src">D班の調査メモ（2026年11月）より。空き状況や条件で変わります。</p></div>`;
+  }
+  return h+`</section>`;
+}
+function mapHTML(){
+  return `<div class="leaves"><div class="leaf mapleaf">
+    <div class="maphead"><h2>稲毛海岸駅のまわり</h2><div class="legend" id="legend"></div></div>
+    <div class="mapgrid"><div class="mapbox"><div class="mapscroll" id="mapscroll">${mapSVG()}</div>
+      <div class="zoom"><button id="zin" aria-label="拡大">＋</button><button id="zout" aria-label="縮小">－</button></div>
+      <span class="scale">概略図</span>
+      <div class="pop" id="pop" hidden></div>
+    </div><aside class="routes" id="routes" aria-label="おさんぽルート"></aside></div></div></div>`;
+}
+function line(x1,y1,x2,y2,cls){return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="${cls}"/>`}
+function mapSVG(){
+  let roads="";
+  [330,430,540,650,770,880].forEach(c=>{roads+=line(-20,c+17.6,640,c-0.88*640,"rd")});
+  [-430,-300,-170,-40,90,230,360].forEach(c=>{roads+=line(-20,c-20,640,c+640,"rd")});
+  const hatch=`<pattern id="hR" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(40)"><line x1="0" y1="0" x2="0" y2="7" stroke="#e9a25e" stroke-width="2.4"/></pattern>
+    <pattern id="hG" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-40)"><line x1="0" y1="0" x2="0" y2="7" stroke="#7cc092" stroke-width="2.2"/></pattern>`;
+  let areas="";
+  Object.entries(P).forEach(([id,p])=>{
+    if(p.poly) areas+=`<polygon points="${p.poly}" fill="url(#hR)" stroke="var(--red)" stroke-width="3" stroke-linejoin="round" class="ar" data-cat="danchi" data-id="${id}"/>`;
+    if(p.area) areas+=`<polygon points="${p.area}" fill="url(#hG)" fill-opacity=".9" stroke="#7cc092" stroke-width="1.5" class="ar" data-cat="park" data-id="${id}"/>`;
+  });
+  const shops=[[144,329],[415,250],[569,371],[528,452],[80,420]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="5" fill="#f3b37a" stroke="#fff" stroke-width="1.5"/>`).join("");
+  return `<svg id="map" viewBox="0 0 600 680" role="img" aria-label="稲毛海岸駅周辺の地図">
+    <defs>${hatch}<filter id="yarn" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="3"/><feDisplacementMap in="SourceGraphic" scale="4"/></filter></defs>
+    <rect width="600" height="680" fill="#eef1ec"/>
+    <g stroke="#d3d9d4" stroke-width="15" stroke-linecap="round">${roads}</g>
+    <g stroke="#fff" stroke-width="11" stroke-linecap="round">${roads}</g>
+    <line x1="300" y1="350" x2="610" y2="452" stroke="#fff" stroke-width="15" stroke-linecap="round"/>
+    <text x="560" y="458" font-size="12" fill="#8a918e" font-weight="700" transform="rotate(18 560 458)" text-anchor="end">こじま通り</text>
+    <path d="M-20,300 L300,8" stroke="#8ec5e8" stroke-width="26" stroke-linecap="round"/>
+    <path d="M-20,300 L300,8" stroke="#a9d6f2" stroke-width="16" stroke-linecap="round"/>
+    <g>${areas}</g>
+    <line x1="-10" y1="358" x2="610" y2="563" stroke="#5d6663" stroke-width="7"/>
+    <line x1="-10" y1="358" x2="610" y2="563" stroke="#fff" stroke-width="3.5" stroke-dasharray="12 10"/>
+    <text x="520" y="520" font-size="12" fill="#5d6663" font-weight="700" transform="rotate(18 520 520)">JR京葉線</text>
+    ${shops}
+    <path id="route" d=""/>
+    <g transform="translate(174,418)"><rect x="-36" y="-14" width="72" height="28" rx="8" fill="var(--ink)"/><text y="5" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">稲毛海岸駅</text>
+      <text id="startLab" y="32" text-anchor="middle" font-size="12" font-weight="700" fill="var(--red)" paint-order="stroke" stroke="#fff" stroke-width="4"></text></g>
+    <g id="mpins"></g>
+  </svg>`;
+}
+function drawMapPins(){
+  const g=$("#mpins"); if(!g) return;
+  let h="";
+  Object.entries(P).forEach(([id,p])=>{
+    const c=COL[p.cat], course=COURSES[curCourse], si=course?course.stops.indexOf(id):-1;
+    const dim=(!layers[p.cat]&&si<0)?" dim":"", sel=mapSel===id?" sel":"", off=(course&&si<0)?" off":"";
+    const short=p.name.replace("千葉市立","");
+    const far=p.x+short.length*15+18>592; let lx=far?-16:16, ly=-14, anchor=far?"end":"start"; if(p.lab){[lx,ly,anchor]=p.lab}
+    h+=`<g class="mpin${dim}${sel}${off}" data-pin="${id}" transform="translate(${p.x},${p.y})" tabindex="${dim?-1:0}" role="button" aria-label="${esc(p.name)}">
+      <path class="head" d="M0 0C0 0 -11 -12.5 -11 -21.5a11 11 0 0 1 22 0C11 -12.5 0 0 0 0Z" fill="${c}" stroke="#fff" stroke-width="2"/>
+      ${p.letter?`<text y="-17" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">${p.letter}</text>`:`<circle cy="-21.5" r="4" fill="#fff"/>`}
+      <text class="lab" x="${lx}" y="${ly}" text-anchor="${anchor}">${esc(short)}</text>
+      ${si>=0?`<g transform="translate(-13,-36)"><circle r="9.5" fill="${visited(id)?"var(--red)":"#fff"}" stroke="var(--red)" stroke-width="2"/><text y="4.5" text-anchor="middle" font-size="12" font-weight="700" fill="${visited(id)?"#fff":"var(--red)"}">${si+1}</text></g>`:""}</g>`;
+  });
+  g.innerHTML=h;
+  document.querySelectorAll("#map .ar").forEach(a=>{a.style.opacity=layers[a.dataset.cat]?1:.15;a.style.cursor="pointer";a.onclick=()=>{if(!layers[a.dataset.cat])return;mapSel=a.dataset.id;drawMapPins();showPop()}});
+  g.querySelectorAll(".mpin").forEach(el=>{
+    const open=()=>{mapSel=el.dataset.pin;drawMapPins();showPop();renderRoutes()};
+    el.addEventListener("click",open);
+    el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();open()}});
+  });
+}
+function showPop(){
+  const pop=$("#pop"); if(!pop) return;
+  if(!mapSel){pop.hidden=true;return}
+  const p=P[mapSel];
+  pop.hidden=false;
+  pop.innerHTML=`<img src="${img(p.photos[0])}" alt=""><div class="t"><small>${CATNAME[p.cat]}${p.letter?" "+p.letter:""}</small><b>${esc(p.name)}</b></div>
+    <button class="go" id="popGo">写真を見る ›</button><button class="x" id="popX" aria-label="とじる">×</button>`;
+  $("#popGo").onclick=()=>goPlace(mapSel);
+  $("#popX").onclick=()=>{mapSel=null;drawMapPins();showPop()};
+}
+function drawLegend(){
+  const box=$("#legend"); if(!box) return;
+  box.innerHTML=Object.keys(COL).map(k=>`<button class="chip" data-layer="${k}" aria-pressed="${!!layers[k]}">${pinSVG(COL[k],12)}${CATNAME[k]}</button>`).join("");
+  box.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{layers[b.dataset.layer]=layers[b.dataset.layer]?0:1;drawLegend();drawMapPins()});
+}
+function coverHTML(){
+  return `<div class="cover" id="coverOpen" role="button" tabindex="0" aria-label="ひらく">
+    <h1><span>団地</span><span>おさ<svg class="walker" viewBox="0 0 40 40" aria-hidden="true"><circle cx="21" cy="7" r="4.5" fill="none" stroke="var(--red)" stroke-width="2.6"/><path d="M20 13 L17 25 L11 35 M17 25 L25 34 M19 16 L11 21 M20 16 L28 20" fill="none" stroke="var(--red)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>ぽ</span><span>マップ</span></h1>
+    <div><p class="place">稲毛海岸駅のまわり</p><span class="open">ひらく ›</span></div></div>`;
+}
+function endHTML(){
+  const items=likes.filter(id=>P[id]);
+  return `<div class="leaves"><div class="leaf endleaf">
+    <h2>気になった場所</h2>
+    ${items.length?`<ul class="liked">${items.map(id=>`<li><button data-goplace="${id}"><img src="${img(P[id].photos[0])}" alt=""><span><small style="color:var(--muted);font-size:12px">${CATNAME[P[id].cat]}${P[id].letter?" "+P[id].letter:""}</small><br><b>${esc(P[id].name)}</b></span></button></li>`).join("")}</ul>`
+      :`<p class="empty">♡をつけた場所がここに並びます。</p>`}
+    <p class="credit">千葉工業大学 情報デザイン応用論及び演習 D班</p>
+  </div></div>`;
+}
+function spreadHTML(s){
+  if(s.id==="cover") return coverHTML();
+  if(s.id==="map") return mapHTML();
+  if(s.id==="end") return endHTML();
+  const leaf=ids=>`<div class="leaf${s.compact?" compact":""}">${ids.map(id=>placeHTML(id)).join("")}</div>`;
+  return `<div class="leaves two">${leaf(s.left)}${leaf(s.right)}</div>`;
+}
+
+// ---------- render ----------
+function build(){
+  $("#pages").innerHTML=SPREADS.map((s,i)=>`<article class="spread" id="sp-${s.id}" aria-label="${s.tab||s.id}">${spreadHTML(s)}</article>`).join("");
+  $("#tabs").innerHTML=SPREADS.map((s,i)=>s.tab?`<button class="tab" data-go="${i}">${pinSVG(COL[s.tabCat],12)}${s.tab}</button>`:"").join("");
+  $("#dots").innerHTML=SPREADS.map(()=>"<span></span>").join("");
+  bind();
+  drawLegend(); drawMapPins(); showPop(); applyZoom(); renderRoutes(); drawRoute(false); updateLikeCount();
+}
+function bind(){
+  $("#tabs").querySelectorAll(".tab").forEach(t=>t.onclick=()=>go(+t.dataset.go));
+  const co=$("#coverOpen"); co.onclick=()=>go(1); co.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go(1)}};
+  document.querySelectorAll("[data-lb]").forEach(b=>b.onclick=()=>openLB(b.dataset.lb,+b.dataset.i));
+  document.querySelectorAll("[data-tomap]").forEach(b=>b.onclick=()=>{mapSel=b.dataset.tomap;layers[P[mapSel].cat]=1;drawLegend();drawMapPins();showPop();go(1)});
+  document.querySelectorAll("[data-like]").forEach(b=>b.onclick=()=>toggleLike(b.dataset.like));
+  document.querySelectorAll("[data-more]").forEach(b=>b.onclick=()=>{const m=$("#more-"+b.dataset.more);m.hidden=!m.hidden;b.setAttribute("aria-expanded",!m.hidden)});
+  document.querySelectorAll("[data-goplace]").forEach(b=>b.onclick=()=>goPlace(b.dataset.goplace));
+  const zi=$("#zin"),zo=$("#zout");
+  if(zi){zi.onclick=()=>{mapZoom=Math.min(2.2,mapZoom+.4);applyZoom()};zo.onclick=()=>{mapZoom=Math.max(1,mapZoom-.4);applyZoom()}}
+}
+function applyZoom(){const m=$("#map");if(m)m.style.width=(mapZoom*100)+"%"}
+function toggleLike(id){
+  likes=likes.includes(id)?likes.filter(x=>x!==id):likes.concat(id); saveLikes();
+  document.querySelectorAll(`[data-like="${id}"]`).forEach(b=>{const on=likes.includes(id);b.setAttribute("aria-pressed",on);b.innerHTML=(on?"♥":"♡")+" 気になる"});
+  $("#sp-end").innerHTML=endHTML();
+  document.querySelectorAll("#sp-end [data-goplace]").forEach(b=>b.onclick=()=>goPlace(b.dataset.goplace));
+  updateLikeCount();
+}
+function updateLikeCount(){$("#likeCount").textContent=likes.length?`♥ ${likes.length}`:""}
+function goPlace(id){
+  const i=pageOf(id); go(i);
+  const el=$("#pl-"+id); if(el) el.scrollIntoView({block:"start",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
+}
+function go(i,fromHash){
+  if(i<0||i>=SPREADS.length) return;
+  const dir=i>=cur?"in-next":"in-prev";
+  document.querySelectorAll(".spread").forEach((s,k)=>{s.classList.remove("in-next","in-prev");s.classList.toggle("on",k===i);if(k===i&&i!==cur)s.classList.add(dir)});
+  cur=i;
+  document.querySelectorAll(".tab").forEach(t=>t.toggleAttribute("aria-current",false));
+  const t=document.querySelector(`.tab[data-go="${i}"]`); if(t) t.setAttribute("aria-current","page");
+  document.querySelectorAll("#dots span").forEach((d,k)=>d.classList.toggle("on",k===i));
+  $("#prev").disabled=i===0; $("#next").disabled=i===SPREADS.length-1;
+  const h="#"+SPREADS[i].id; if(!fromHash && location.hash!==h) history.replaceState(null,"",h);
+}
+$("#prev").onclick=()=>go(cur-1);
+$("#next").onclick=()=>go(cur+1);
+document.addEventListener("keydown",e=>{
+  if(!$("#lb").hidden){ if(e.key==="Escape")closeLB(); if(e.key==="ArrowRight")stepLB(1); if(e.key==="ArrowLeft")stepLB(-1); return; }
+  if(e.target.closest&&e.target.closest("input,textarea"))return;
+  if(e.key==="ArrowRight")go(cur+1); if(e.key==="ArrowLeft")go(cur-1);
+});
+// swipe to turn pages (not on the map, which scrolls)
+let sx=0,sy=0,st=false;
+$("#pages").addEventListener("touchstart",e=>{st=!e.target.closest(".mapscroll");sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});
+$("#pages").addEventListener("touchend",e=>{if(!st)return;const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.abs(dx)>70&&Math.abs(dy)<45)go(cur+(dx<0?1:-1))},{passive:true});
+
+// lightbox
+let lbId=null,lbI=0;
+function openLB(id,i){lbId=id;lbI=i;$("#lb").hidden=false;renderLB();$("#lbClose").focus()}
+function renderLB(){const p=P[lbId];$("#lbImg").src=img(p.photos[lbI]);$("#lbImg").alt=p.name;$("#lbCap").textContent=p.name;$("#lbCnt").textContent=`${lbI+1} / ${p.photos.length}`;
+  $("#lbPrev").disabled=p.photos.length<2;$("#lbNext").disabled=p.photos.length<2}
+function stepLB(d){const n=P[lbId].photos.length;lbI=(lbI+d+n)%n;renderLB()}
+function closeLB(){$("#lb").hidden=true}
+$("#lbClose").onclick=closeLB; $("#lbPrev").onclick=()=>stepLB(-1); $("#lbNext").onclick=()=>stepLB(1);
+$("#lb").addEventListener("click",e=>{if(e.target.id==="lb")closeLB()});
+
+build();
+const start=()=>{const h=location.hash.slice(1);const i=SPREADS.findIndex(s=>s.id===h);go(i>=0?i:0,true)};
+window.addEventListener("hashchange",()=>{const i=SPREADS.findIndex(s=>s.id===location.hash.slice(1));if(i>=0&&i!==cur)go(i,true)});
+start();
+})();
+</script>
+</body>
+</html>
