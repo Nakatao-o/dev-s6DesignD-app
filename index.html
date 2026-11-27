@@ -19,6 +19,7 @@
   --green:#3a9a5c; /* 公園 */
   --blue:#3b6fc4;  /* 学校 */
   --orange:#e2802b;/* まち */
+  --slate:#5c6b80; /* マンション */
   --hand:"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",cursive;
   --body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
   color-scheme:light;
@@ -49,8 +50,8 @@ img{display:block;max-width:100%}
 .leaf{padding:22px 22px 28px;display:flex;flex-direction:column;gap:22px}
 
 /* index tabs */
-.tabs{flex:0 0 40px;display:flex;flex-direction:column;gap:6px;padding-top:28px}
-.tab{writing-mode:vertical-rl;text-orientation:upright;font-family:var(--hand);font-weight:600;font-size:14px;letter-spacing:.06em;background:#eef1ef;border:1px solid #cfd5d2;border-left:0;border-radius:0 10px 10px 0;padding:12px 7px;display:flex;align-items:center;gap:6px;color:var(--muted);min-height:78px;justify-content:flex-start}
+.tabs{flex:0 0 40px;display:flex;flex-direction:column;gap:6px;padding:28px 0 8px;overflow-y:auto;scrollbar-width:none}
+.tab{flex:0 0 auto;writing-mode:vertical-rl;text-orientation:upright;font-family:var(--hand);font-weight:600;font-size:14px;letter-spacing:.06em;background:#eef1ef;border:1px solid #cfd5d2;border-left:0;border-radius:0 10px 10px 0;padding:9px 6px;display:flex;align-items:center;gap:6px;color:var(--muted);min-height:60px;justify-content:flex-start}
 .tab svg{writing-mode:horizontal-tb;flex:0 0 auto}
 .tab[aria-current="page"]{background:var(--paper);color:var(--ink);box-shadow:4px 4px 10px rgba(40,50,45,.12);margin-left:-1px}
 .tab:nth-child(2){margin-top:6px}
@@ -78,6 +79,7 @@ img{display:block;max-width:100%}
 /* place blocks */
 .place{display:flex;flex-direction:column;gap:10px}
 .ph{display:flex;align-items:center;gap:6px}
+.ph>svg{flex:0 0 auto}
 .ph h2{font-family:var(--hand);font-weight:600;font-size:clamp(22px,4.6vw,28px);line-height:1.25;margin:0;text-wrap:balance}
 .ph .letter{font-family:var(--hand);font-size:14px;color:var(--red);align-self:flex-end;margin:0 4px 2px -4px}
 .sub{font-family:var(--hand);font-size:15px;margin:-6px 0 0 34px;color:#444}
@@ -126,6 +128,24 @@ img{display:block;max-width:100%}
 .pop .t small{color:var(--muted);font-size:12px}
 .pop .go{background:var(--ink);color:#fff;border-radius:999px;padding:7px 12px;font-size:13px;font-weight:700;white-space:nowrap}
 .pop .x{position:absolute;top:4px;right:8px;font-size:18px;color:var(--muted)}
+
+/* info & sources */
+.more .note{font-size:11.5px;color:var(--muted);margin:8px 0 0}
+.srcs{margin:8px 0 0;padding:8px 0 0;border-top:1px dashed #d5dbd8;list-style:none;display:grid;gap:3px;font-size:12px}
+.srcs li::before{content:"出典 ";color:var(--muted)}
+.srcs a{color:var(--blue);text-underline-offset:2px;word-break:break-all}
+.place.nophoto{background:#f6f8f7;border-radius:16px;padding:12px 14px}
+.place.nophoto .more{background:#fff}
+.kind{font-size:12px;font-weight:700;color:var(--slate);margin:-4px 0 0 34px}
+.mansion-note{font-size:12.5px;color:var(--muted);margin:0}
+.sup h2.sec{font-family:var(--hand);font-weight:600;font-size:24px;margin:0}
+.scard{border:1.5px solid var(--rule);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.scard h3{font-family:var(--hand);font-weight:600;font-size:18px;margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.scard .tg{font-family:var(--body);font-size:11.5px;font-weight:700;color:var(--red);border:1.5px solid var(--red);border-radius:999px;padding:0 8px}
+.scard ul.pts{margin:0;padding-left:1.2em;font-size:14px;display:grid;gap:3px}
+.asof{font-size:12px;color:var(--muted);margin:0}
+.pop .noimg{width:84px;height:64px;border-radius:12px;background:#e8ecef;display:grid;place-items:center;flex:0 0 auto}
+.stopname .noimg,.liked .noimg{width:52px;height:40px;border-radius:9px;background:#e8ecef;display:grid;place-items:center;flex:0 0 auto}
 
 /* route */
 .mapgrid{display:grid;grid-template-columns:1fr;gap:14px;align-items:start}
@@ -210,28 +230,127 @@ img{display:block;max-width:100%}
 
 <script>
 (function(){
-const COL={danchi:"var(--red)",park:"var(--green)",school:"var(--blue)",town:"var(--orange)"};
-const CATNAME={danchi:"団地",park:"公園",school:"学校",town:"まち"};
+const COL={danchi:"var(--red)",mansion:"var(--slate)",park:"var(--green)",school:"var(--blue)",town:"var(--orange)"};
+const CATNAME={danchi:"団地",mansion:"マンション",park:"公園",school:"学校",town:"まち"};
+// 出典（2026年11月27日にWebで確認）
+const S={
+  cityTakasu:["千葉市 団地紹介（海浜ニュータウン・高洲）","https://www.city.chiba.jp/toshi/kenchiku/jutakuseisaku/danti_08_01.html"],
+  cityInage:["千葉市 団地紹介（稲毛海岸地区）","https://www.city.chiba.jp/toshi/kenchiku/jutakuseisaku/danti_11.html"],
+  urT1:["UR賃貸住宅 高洲第一団地","https://www.ur-net.go.jp/chintai/kanto/chiba/30_2390.html"],
+  urT2:["UR賃貸住宅 高洲第二団地","https://www.ur-net.go.jp/chintai/kanto/chiba/30_2650.html"],
+  urMuji:["UR MUJI×UR 高洲第二団地 募集資料（PDF）","https://www.ur-net.go.jp/chintai/muji/pdf/30_265/bosyu.pdf"],
+  urWell:["UR 報道発表 ウェルキャビン稲毛海岸（PDF）","https://www.ur-net.go.jp/east/press/lrmhph00000152dw-att/ur2019_e1105_inage.pdf"],
+  inasanReport:["美浜区 稲三サポートの会 活動報告（PDF）","https://www.city.chiba.jp/mihama/chiikizukuri/r2_tiikikasseikasiennzigyou/documents/03_inasannsapo-tonokai.pdf"],
+  inageArea:["美浜区 稲毛海岸地区の地域団体・行事（PDF）","https://www.city.chiba.jp/mihama/chiikizukuri/documents/r8-3_02-2_inagekaigan.pdf"],
+  treeDiag:["千葉市 樹木診断会報告 稲毛海岸三丁目団地（PDF）","https://www.city.chiba.jp/toshi/koenryokuchi/ryokusei/midoritohana/documents/inagekaigan3jyumksindn-2511m.pdf"],
+  inasanHP:["稲毛海岸3丁目団地管理組合法人","https://www.inasan-danchi.or.jp/"],
+  rehouseB:["三井のリハウス 稲毛海岸3丁目団地","https://www.rehouse.co.jp/mansionlibrary/ABM0060871/"],
+  yahooB:["Yahoo!不動産 稲毛海岸三丁目団地の売出例","https://realestate.yahoo.co.jp/used/mansion/detail_corp/b0023347026/"],
+  rehouseC:["三井のリハウス 高洲一丁目住宅","https://www.rehouse.co.jp/mansionlibrary/ABM0003472"],
+  ekitanC:["駅探 稲毛海岸駅の中古マンション","https://ekitan.com/local-info/used-housing/all/station-1593"],
+  yahooC:["Yahoo!不動産 高洲一丁目住宅の売出例","https://realestate.yahoo.co.jp/used/mansion/detail_corp/b0025071974/"],
+  sportsC:["千葉市 高洲スポーツセンター","https://www.city.chiba.jp/shimin/seikatsubunka/sports/takasusupo-tusennta-.html"],
+  inagishiC:["千葉市 稲岸公園","https://www.city.chiba.jp/shisetsu/koen/1063.html"],
+  parksList:["千葉市が管理する都市公園（美浜区）","https://www.city.chiba.jp/toshi/koenryokuchi/ryokusei/marketsounding-mihama.html"],
+  aeon:["イオンマリンピア店（公式）","https://www.aeon.com/store/%E3%82%A4%E3%82%AA%E3%83%B3/%E3%82%A4%E3%82%AA%E3%83%B3%E3%83%9E%E3%83%AA%E3%83%B3%E3%83%94%E3%82%A2%E5%BA%97/shop_info/specialty_store/"],
+  tokubai:["トクバイ 稲毛海岸の店舗一覧","https://tokubai.co.jp/prefectures/12/loconavi_spots/231026"],
+  district29:["美浜区 高洲・高浜地区の紹介（町内自治会ポータル）","https://www.city.chiba.jp/mihama/chiikizukuri/jichikai_potal_mi29.html"],
+  evac:["千葉市 指定避難所一覧 美浜区（PDF）","https://www.city.chiba.jp/sogoseisaku/kikikanri/bosai/documents/06mihama.pdf"],
+  sumikae:["千葉市 団地住替え支援事業","https://www.city.chiba.jp/toshi/kenchiku/jutakuseisaku/danchisumikaeshien.html"],
+  sumikaeKids:["千葉市 団地住替え支援事業（子育て世帯）","https://www.city.chiba.jp/toshi/kenchiku/jutakuseisaku/kosodatesetaisumikaeshien.html"],
+  leaflet:["千葉市 令和8年度 団地住替え支援チラシ（PDF）","https://www.city.chiba.jp/toshi/kenchiku/jutakuseisaku/documents/r8_leaflet.pdf"],
+  urPriority:["UR 子育て・若者夫婦世帯の申込優先受付（PDF）","https://www.ur-net.go.jp/chintai/pdf/2025/20250627_1071_4_release.pdf"],
+  urKinkyo:["UR 報道発表 近居割の拡充（2026年4月・PDF）","https://www.ur-net.go.jp/aboutus/press/bn5k4400000025jk-att/ur2026_press_0410_honsya.pdf"],
+  relax:["千葉市 子育てリラックス館","https://www.city.chiba.jp/kodomomirai/yojikyoiku/shien/riraakusukan3.html"],
+  commu:["千葉市 高洲コミュニティセンター","https://www.city.chiba.jp/shisetsu/community/0014.html"],
+  commuFes:["美浜区長の動き 高洲コミュニティまつり（2024）","https://www.city.chiba.jp/mihama/somu/kuchositsu/r6/takasu2024.html"],
+  fes:["美浜区民フェスティバル（2026）","https://www.city.chiba.jp/mihama/chiikizukuri/kuminfestival/2026_mihamakuminnfes.html"],
+  localEv:["美浜区 地域イベント情報（令和8年度）","https://www.city.chiba.jp/mihama/chiikizukuri/tiikiibento_08.html"],
+  ctLivable:["東急リバブル シティテラス稲毛海岸","https://www.livable.co.jp/kounyu/inquiry/C12261480/"],
+  ctAthome:["at home シティテラス稲毛海岸（新築住戸）","https://www.athome.co.jp/mansion/shinchiku/realestate/CM10047/chiba/inagekaigan-st/list/"],
+  ecRehouse:["三井のリハウス エクセレントシティ稲毛海岸駅前","https://www.rehouse.co.jp/mansionlibrary/ABM0175795/"],
+  granAthome:["at home 美浜区高洲の新築マンション","https://www.athome.co.jp/mansion/shinchiku/chiba/chiba_mihama/town/12106006/list/"],
+  bayGoo:["goo住宅・不動産 稲毛海岸駅の中古マンション","https://house.goo.ne.jp/buy/shuto_um/ensen/164/2164160ma.html?p=17"],
+  memo:["D班の調査メモ（2026年11月・公式サイトで要確認）",null]
+};
 // 位置は冊子の地図（Googleマップをなぞった手描き）をもとにした概略
 const P={
-  A:{cat:"danchi",letter:"A",name:"高洲第二団地",photos:["a1","a2","a3","a4"],x:193,y:243,poly:"128,282 246,201 270,238 151,324",
-     info:[["家賃","47,000〜88,300円／月"],["購入","990万円〜"],["駅まで","歩いて5〜7分"],["そのほか","無印良品×URのリノベーション住戸あり"]]},
-  B:{cat:"danchi",letter:"B",name:"稲毛海岸三丁目団地",photos:["b1","b2","b3","b4"],x:462,y:152,lab:[-58,16,"start"],poly:"354,178 487,52 590,151 456,282",
-     info:[["購入","600〜1,480万円"]]},
-  C:{cat:"danchi",letter:"C",name:"高洲一丁目住宅",photos:["c1","c2","c3","c4"],x:326,y:291,poly:"256,324 349,232 407,304 323,368",
-     info:null},
-  D:{cat:"danchi",letter:"D",name:"UR高洲第一住宅",photos:["d1","d2","d3","d4"],x:366,y:545,poly:"297,591 364,507 421,570 359,654",
-     info:[["家賃","40,800〜85,100円／月"],["駅まで","歩いて6〜20分（棟による）"],["バス","稲毛駅からバス5分＋徒歩7分"]]},
-  sports:{cat:"park",name:"高洲スポーツセンター",photos:["s1","s2","s3","s4"],x:267,y:131,area:"236,152 286,108 318,140 268,184"},
-  inagishi:{cat:"park",name:"稲岸公園",photos:["i1","i2","i3"],x:400,y:40,area:"330,62 372,22 430,22 375,78"},
-  takasu:{cat:"park",name:"高洲公園",photos:["p3","p2","p1"],x:296,y:490,area:"262,500 296,466 330,500 296,534"},
-  pia:{cat:"town",name:"ピアシティ",sub:"サンドラッグ・Seria・魚べい など",photos:["pi1"],x:205,y:66},
-  river:{cat:"town",name:"川",photos:["r1"],x:118,y:150},
+  A:{cat:"danchi",letter:"A",name:"高洲第二団地",sub:"UR賃貸住宅",photos:["a1","a2","a3","a4"],x:193,y:243,poly:"128,282 246,201 270,238 151,324",
+     info:[["家賃","47,000〜88,300円／月（共益費2,200円）※D班メモ"],["市の家賃相場","高洲エリアで4〜8万円／月程度"],["駅まで","稲毛海岸駅 徒歩3分"],
+       ["団地内の施設","「ウェルキャビン稲毛海岸」（2019年開業）：コンビニ、介護相談窓口、訪問介護・看護、認可小規模保育園など"],
+       ["リノベ住戸","MUJI×URのリノベーション住戸の募集実績あり"],["子育て向け","子育て世帯・若者夫婦世帯の申込優先受付（UR）を市の団地紹介で案内"]],
+     src:["urT2","cityTakasu","urWell","urMuji","memo"]},
+  B:{cat:"danchi",letter:"B",name:"稲毛海岸三丁目団地",sub:"分譲（旧日本住宅公団）",photos:["b1","b2","b3","b4"],x:462,y:152,lab:[-58,16,"start"],poly:"354,178 487,52 590,151 456,282",
+     info:[["規模","27棟・768戸（1968年入居）、敷地約8.4ha"],["広さ","専有面積 約48〜66㎡"],["売出例","2LDK 47.99㎡ 680万円、2LDK 62.98㎡ 670万円 など"],
+       ["月々の費用例","2LDK 62.98㎡：管理費5,000円＋修繕積立金12,600円"],["駅まで","稲毛海岸駅 徒歩12分前後"],
+       ["団地の活動","管理組合による自主管理。いきいきサロン（毎月第2水曜）、散歩クラブ、住民どうしで買い物やゴミ出しを手伝う「稲三サポートの会」、樹木診断会（2025年11月）"]],
+     src:["inasanReport","inageArea","treeDiag","rehouseB","yahooB","cityInage","inasanHP"]},
+  C:{cat:"danchi",letter:"C",name:"高洲一丁目住宅",sub:"分譲（旧日本住宅公団）",photos:["c1","c2","c3","c4"],x:326,y:291,poly:"256,324 349,232 407,304 323,368",
+     info:[["規模","1976年3月築・5階建・550戸"],["売出例","2LDK 48.9㎡ 1,288万円（リフォーム済み住戸）など"],["月々の費用例","2LDK 48.93㎡：管理費5,000円＋修繕積立金13,550円"],["駅まで","稲毛海岸駅 徒歩6〜8分"]],
+     src:["rehouseC","ekitanC","yahooC","cityTakasu"]},
+  D:{cat:"danchi",letter:"D",name:"UR高洲第一住宅",sub:"UR賃貸住宅「高洲第一団地」",photos:["d1","d2","d3","d4"],x:366,y:545,poly:"297,591 364,507 421,570 359,654",
+     info:[["家賃","40,800〜85,100円／月（共益費2,900〜3,900円）※D班メモ"],["市の家賃相場","高洲エリアで4〜8万円／月程度"],["駅まで","稲毛海岸駅 徒歩6〜20分（棟による）"],["バス","稲毛駅からバス5分＋徒歩7分（D班メモ）"],["室内","市の団地紹介ページに室内紹介動画あり"]],
+     src:["urT1","cityTakasu","memo"]},
+  ec:{cat:"mansion",name:"エクセレントシティ稲毛海岸駅前",short:"エクセレントシティ駅前",x:250,y:444,
+     info:[["所在地","美浜区高洲3丁目"],["駅まで","稲毛海岸駅 徒歩3分"],["建物","2018年12月築・13階建・112戸"]],src:["ecRehouse"]},
+  gran:{cat:"mansion",name:"エクセレントシティ稲毛海岸 THE STATION GRAN",short:"STATION GRAN（新築）",x:70,y:508,
+     info:[["所在地","美浜区高洲3丁目"],["駅まで","稲毛海岸駅 徒歩3分"],["規模","263戸・1LDK〜4LDK（約38〜83㎡）"],["状況","新築。2026年8月中旬販売開始予定と掲載、引渡し2028年3月末予定"]],src:["granAthome"]},
+  plaza:{cat:"mansion",name:"稲毛海岸駅前プラザ",short:"駅前プラザ",x:262,y:386,
+     info:[["家賃","91,400〜165,100円／月（共益費4,000円・4,200円）※D班メモ"],["駅まで","稲毛海岸駅 徒歩7〜8分"]],src:["memo"]},
+  ct:{cat:"mansion",name:"シティテラス稲毛海岸",short:"シティテラス",x:84,y:330,
+     info:[["所在地","美浜区高洲4丁目"],["駅まで","稲毛海岸駅 徒歩6分"],["建物","2023年1月竣工・10階建・302戸"],["価格例","新築住戸 5,090万〜5,690万円（64〜67㎡）"]],src:["ctLivable","ctAthome"]},
+  bay:{cat:"mansion",name:"ベイマークスクエア マリナコートタワー",short:"ベイマークスクエア",x:96,y:640,
+     info:[["所在地","美浜区高洲3丁目"],["駅まで","稲毛海岸駅 徒歩6分"],["建物","2000年9月築"]],src:["bayGoo"]},
+  sports:{cat:"park",name:"高洲スポーツセンター",photos:["s1","s2","s3","s4"],x:267,y:131,area:"236,152 286,108 318,140 268,184",
+     info:[["所在地","美浜区高洲4-2-2"],["施設","体育館・トレーニング室・屋外プール（夏のみ）"],["時間","9〜21時（プールは夏季 9〜18時）"],["使い方","個人利用は予約なしの当日受付、2時間単位。子ども用プールは幼児2人につき大人1人の付き添いが必要"]],
+     src:["sportsC","cityTakasu"]},
+  inagishi:{cat:"park",name:"稲岸公園",photos:["i1","i2","i3"],x:400,y:40,area:"330,62 372,22 430,22 375,78",
+     info:[["所在地","美浜区稲毛海岸4丁目15"],["駅まで","稲毛海岸駅 徒歩10分"],["種類","近隣公園。市の団地紹介ページで子育て環境として紹介"]],src:["inagishiC","cityInage"]},
+  takasu:{cat:"park",name:"高洲公園",photos:["p3","p2","p1"],x:296,y:490,area:"262,500 296,466 330,500 296,534",
+     info:[["種類","近隣公園（千葉市が管理）"],["市の紹介","市の団地紹介ページで「自然・公園」として紹介"]],src:["parksList","cityTakasu"]},
+  pia:{cat:"town",name:"ピアシティ",sub:"サンドラッグ・Seria・魚べい など",photos:["pi1"],x:205,y:66,
+     info:[["所在地","美浜区真砂1丁目"],["お店","サンドラッグ、Seria、魚べい、ペテモ（ペット用品）など"]],src:["tokubai"]},
+  river:{cat:"town",name:"川",photos:["r1"],x:118,y:150,
+     info:[["メモ","高洲の西側には草野水路が流れ、その先は真砂・磯辺（美浜区の地区紹介より）"]],src:["district29"]},
   kojima:{cat:"town",name:"こじま通り",photos:["k1"],x:520,y:423},
-  aeon:{cat:"town",name:"AEON",sub:"イオンマリンピア",photos:["e1","e2"],x:196,y:470},
-  inahama:{cat:"school",name:"千葉市立稲浜中学校",photos:["h1"],x:556,y:212},
-  dai4:{cat:"school",name:"千葉市立高洲第四小学校",photos:["y1"],x:428,y:318},
-  dai3:{cat:"school",name:"千葉市立高洲第三小学校",photos:["t1"],x:200,y:590}
+  aeon:{cat:"town",name:"AEON",sub:"イオンマリンピア",photos:["e1","e2"],x:196,y:470,
+     info:[["所在地","美浜区高洲3-13-1"],["時間","食品売場 8:00〜24:00（専門店は店ごとに異なる）"],["そのほか","専門館あり。無料お買物バスの案内あり"]],src:["aeon","tokubai"]},
+  inahama:{cat:"school",name:"千葉市立稲浜中学校",photos:["h1"],x:556,y:212,
+     info:[["地域","稲浜中学校区で青少年育成委員会・青少年相談員などが活動。避難所運営委員会もある"]],src:["inageArea"]},
+  dai4:{cat:"school",name:"千葉市立高洲第四小学校",photos:["y1"],x:428,y:318,
+     info:[["所在地","美浜区高洲1-15-1"],["防災","市の指定避難所"]],src:["evac"]},
+  dai3:{cat:"school",name:"千葉市立高洲第三小学校",photos:["t1"],x:200,y:590,
+     info:[["所在地","美浜区高洲3-3-11"],["防災","市の指定避難所"]],src:["evac"]}
+};
+const SUPPORT={
+  left:{title:"住まいの支援",cards:[
+    {h:"千葉市 団地住替え支援事業",tag:"最大30万円",pts:[
+      "子育て世帯・新婚世帯・パートナーシップ宣誓をしたカップルが、市内の「高経年住宅団地」に新しく引っ越すと対象",
+      "中古住宅の購入費や家賃、引越し費用、リフォーム費用を補助。最大30万円（結婚・宣誓のとき2人とも29歳以下なら最大60万円）",
+      "令和8年度の受付は2026年6月1日〜2027年2月28日。予算に達した時点で終了",
+      "2年以上住むことを誓約。対象かどうかは市の「高経年住宅団地一覧」の住所で決まる（建物の種類や築年数は問わない）",
+      "対象世帯はフラット35（地域連携型）の金利引下げを使える可能性あり"],src:["sumikae","sumikaeKids","leaflet"]},
+    {h:"UR 子育て・若者夫婦世帯の申込優先受付",tag:"UR賃貸",pts:[
+      "希望条件を登録しておくと、空室が出たときにメールで先に知らせてくれる",
+      "募集開始から3営業日は、子育て世帯・若者夫婦世帯だけが申し込める",
+      "子育て世帯＝18歳未満の子を育てている世帯（妊娠中も可）。若者夫婦＝どちらかが40歳未満の夫婦"],src:["urPriority","cityTakasu"]},
+    {h:"UR 近居割の拡充",tag:"UR賃貸",pts:[
+      "親や子の世帯の近くでURに住み始めると家賃が割引になる「近居割」。2026年4月に子育て世帯・若者夫婦世帯向けに拡充"],src:["urKinkyo"]}]},
+  right:{title:"子育て・地域のイベント",cards:[
+    {h:"高洲・子育てリラックス館",tag:"無料",pts:[
+      "美浜区高洲3-12-1（高洲コミュニティセンター隣）",
+      "小学校入学前の子どもと保護者が対象。月〜土 10〜16時（日祝休み）",
+      "託児はなく、親子で一緒に過ごす場所"],src:["relax"]},
+    {h:"高洲コミュニティセンター・高洲コミュニティまつり",tag:"毎年11月",pts:[
+      "高洲3-12-1、9〜21時。駅前に図書館などと集まっている地域の拠点",
+      "毎年11月上旬に「高洲コミュニティまつり」。2024年は第43回（11月2・3日）、ダンスや吹奏楽、作品展示など"],src:["commu","commuFes","district29"]},
+    {h:"美浜区民フェスティバル",tag:"毎年秋",pts:[
+      "稲毛海浜公園で開かれる区のおまつり。2026年は10月4日に開催",
+      "パン食い競争や昔の遊び、中高生の吹奏楽、模擬店、フリーマーケットなど"],src:["fes"]},
+    {h:"地域の夏祭り",tag:"毎年夏",pts:[
+      "自治会や実行委員会による夏祭りがある。2026年は稲浜小地区夏祭り（7月11日、稲毛海岸二丁目公園）など"],src:["localEv"]},
+    {h:"団地のサークル",tag:"毎月",pts:[
+      "稲毛海岸三丁目団地の「いきいきサロン」（毎月第2水曜 10〜12時、談話室）や散歩クラブ"],src:["inageArea"]}]}
 };
 const STATION=[174,418];
 const COURSES={
@@ -243,8 +362,10 @@ const SPREADS=[
   {id:"map",tab:"地図",tabCat:"town"},
   {id:"ab",tab:"AB団地",tabCat:"danchi",left:["A"],right:["B"]},
   {id:"cd",tab:"CD団地",tabCat:"danchi",left:["C"],right:["D"]},
+  {id:"mansion",tab:"マンション",tabCat:"mansion",left:["ec","gran","plaza"],right:["ct","bay"],compact:true},
   {id:"park",tab:"公園",tabCat:"park",left:["sports","inagishi"],right:["takasu"]},
   {id:"other",tab:"その他",tabCat:"town",left:["pia","river","kojima","aeon"],right:["inahama","dai4","dai3"],compact:true},
+  {id:"support",tab:"支援・行事",tabCat:"danchi"},
   {id:"end",tab:null}
 ];
 const pageOf=id=>SPREADS.findIndex(s=>(s.left||[]).concat(s.right||[]).includes(id));
@@ -276,7 +397,7 @@ function renderRoutes(){
     const c=COURSES[curCourse], n=(stamps[curCourse]||[]).length;
     h+=`<p class="rmeta">稲毛海岸駅から ${c.stops.length}か所をまわって駅にもどります。来た場所の番号をタップ（${n}/${c.stops.length}）</p>
     <ol class="rstops"><li class="ends">稲毛海岸駅 スタート</li>${c.stops.map((id,i)=>`<li><button class="stamp" data-stamp="${id}" aria-pressed="${visited(id)}" aria-label="${esc(P[id].name)}に来た">${i+1}</button>
-      <button class="stopname" data-stop="${id}" aria-current="${mapSel===id}"><img src="${img(P[id].photos[0])}" alt=""><span><b>${esc(P[id].name)}</b><small>${CATNAME[P[id].cat]}${P[id].letter?" "+P[id].letter:""}</small></span></button></li>`).join("")}
+      <button class="stopname" data-stop="${id}" aria-current="${mapSel===id}">${P[id].photos?`<img src="${img(P[id].photos[0])}" alt="">`:`<span class="noimg">${bldg(COL[P[id].cat])}</span>`}<span><b>${esc(P[id].name)}</b><small>${CATNAME[P[id].cat]}${P[id].letter?" "+P[id].letter:""}</small></span></button></li>`).join("")}
     <li class="ends">稲毛海岸駅 ゴール</li></ol>`;
   }
   box.innerHTML=h;
@@ -284,7 +405,7 @@ function renderRoutes(){
   box.querySelectorAll("[data-stamp]").forEach(b=>b.onclick=()=>toggleStamp(b.dataset.stamp));
   box.querySelectorAll("[data-stop]").forEach(b=>b.onclick=()=>{mapSel=b.dataset.stop;drawMapPins();showPop();renderRoutes()});
 }
-let cur=0, mapSel=null, mapZoom=1, layers={danchi:1,park:1,school:1,town:1};
+let cur=0, mapSel=null, mapZoom=1, layers={danchi:1,mansion:1,park:1,school:1,town:1};
 
 const $=s=>document.querySelector(s);
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -292,24 +413,32 @@ const img=k=>`img/${k}.jpg`;
 function pinSVG(color,size){return `<svg width="${size}" height="${size*1.25}" viewBox="0 0 24 30" aria-hidden="true"><path d="M12 28.5C12 28.5 3 18.6 3 11.5a9 9 0 0 1 18 0C21 18.6 12 28.5 12 28.5Z" fill="#fff" stroke="${color}" stroke-width="2.2"/><circle cx="12" cy="11.5" r="3.4" fill="none" stroke="${color}" stroke-width="2"/></svg>`}
 
 // ---------- builders ----------
-function placeHTML(id,opts={}){
-  const p=P[id], c=COL[p.cat];
-  const n=p.photos.length, cls=n===1?"one":(n===3?"three":"");
-  const liked=likes.includes(id);
-  let h=`<section class="place" id="pl-${id}">
-    <div class="ph">${pinSVG(c,26)}${p.letter?`<span class="letter">${p.letter}</span>`:""}<h2>${esc(p.name)}</h2></div>
-    ${p.sub?`<p class="sub">${esc(p.sub)}</p>`:""}
-    <div class="photos ${cls}">${p.photos.map((k,i)=>`<button class="ph-btn" data-lb="${id}" data-i="${i}" aria-label="${esc(p.name)}の写真${i+1}を大きく見る"><img src="${img(k)}" alt="" loading="lazy"></button>`).join("")}</div>
+function srcList(keys){return `<ul class="srcs">${(keys||[]).map(k=>{const[t,u]=S[k];return u?`<li><a href="${u}" target="_blank" rel="noopener">${esc(t)}</a></li>`:`<li>${esc(t)}</li>`}).join("")}</ul>`}
+function bldg(c){return `<svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V6l7-3v18M12 21V9l7 2v10M3 21h18M8 9h1M8 12h1M8 15h1M15 13h1M15 16h1" fill="none" stroke="${c}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`}
+function placeHTML(id){
+  const p=P[id], c=COL[p.cat], photos=p.photos||[];
+  const n=photos.length, cls=n===1?"one":(n===3?"three":"");
+  const liked=likes.includes(id), hasMore=!!(p.info||p.src), open=!n;
+  let h=`<section class="place${n?"":" nophoto"}" id="pl-${id}">
+    <div class="ph">${n?pinSVG(c,26):bldg(c)}${p.letter?`<span class="letter">${p.letter}</span>`:""}<h2>${esc(p.name)}</h2></div>
+    ${p.sub?`<p class="${p.cat==="danchi"?"kind":"sub"}">${esc(p.sub)}</p>`:""}
+    ${n?`<div class="photos ${cls}">${photos.map((k,i)=>`<button class="ph-btn" data-lb="${id}" data-i="${i}" aria-label="${esc(p.name)}の写真${i+1}を大きく見る"><img src="${img(k)}" alt="" loading="lazy"></button>`).join("")}</div>`:""}
     <div class="acts">
       <button class="act" data-tomap="${id}">${pinSVG(c,11)} 地図で見る</button>
       <button class="act" data-like="${id}" aria-pressed="${liked}">${liked?"♥":"♡"} 気になる</button>
-      ${p.cat==="danchi"?`<button class="act" data-more="${id}" aria-expanded="false" aria-controls="more-${id}">くわしく</button>`:""}
+      ${hasMore&&!open?`<button class="act" data-more="${id}" aria-expanded="false" aria-controls="more-${id}">くわしく・出典</button>`:""}
     </div>`;
-  if(p.cat==="danchi"){
-    h+=`<div class="more" id="more-${id}" hidden>${p.info?`<dl>${p.info.map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}</dl>`:`<p style="margin:0">家賃・価格はいま調べています。</p>`}
-      <p class="src">D班の調査メモ（2026年11月）より。空き状況や条件で変わります。</p></div>`;
+  if(hasMore){
+    h+=`<div class="more" id="more-${id}"${open?"":" hidden"}>${p.info?`<dl>${p.info.map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}</dl>`:""}
+      ${p.cat==="danchi"||p.cat==="mansion"?`<p class="note">金額は掲載時点の例です。空き状況や条件で変わります。</p>`:""}${srcList(p.src)}</div>`;
   }
   return h+`</section>`;
+}
+function supportHTML(){
+  const side=sd=>`<div class="leaf sup"><h2 class="sec">${sd.title}</h2>${sd.cards.map(cd=>`<section class="scard"><h3>${esc(cd.h)}<span class="tg">${esc(cd.tag)}</span></h3>
+    <ul class="pts">${cd.pts.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>${srcList(cd.src)}</section>`).join("")}
+    ${sd===SUPPORT.right?`<p class="asof">2026年11月27日にWebで調べた内容です。申し込みや参加の前に、各出典で最新情報を確認してください。</p>`:""}</div>`;
+  return `<div class="leaves two">${side(SUPPORT.left)}${side(SUPPORT.right)}</div>`;
 }
 function mapHTML(){
   return `<div class="leaves"><div class="leaf mapleaf">
@@ -359,7 +488,7 @@ function drawMapPins(){
   Object.entries(P).forEach(([id,p])=>{
     const c=COL[p.cat], course=COURSES[curCourse], si=course?course.stops.indexOf(id):-1;
     const dim=(!layers[p.cat]&&si<0)?" dim":"", sel=mapSel===id?" sel":"", off=(course&&si<0)?" off":"";
-    const short=p.name.replace("千葉市立","");
+    const short=p.short||p.name.replace("千葉市立","");
     const far=p.x+short.length*15+18>592; let lx=far?-16:16, ly=-14, anchor=far?"end":"start"; if(p.lab){[lx,ly,anchor]=p.lab}
     h+=`<g class="mpin${dim}${sel}${off}" data-pin="${id}" transform="translate(${p.x},${p.y})" tabindex="${dim?-1:0}" role="button" aria-label="${esc(p.name)}">
       <path class="head" d="M0 0C0 0 -11 -12.5 -11 -21.5a11 11 0 0 1 22 0C11 -12.5 0 0 0 0Z" fill="${c}" stroke="#fff" stroke-width="2"/>
@@ -380,8 +509,8 @@ function showPop(){
   if(!mapSel){pop.hidden=true;return}
   const p=P[mapSel];
   pop.hidden=false;
-  pop.innerHTML=`<img src="${img(p.photos[0])}" alt=""><div class="t"><small>${CATNAME[p.cat]}${p.letter?" "+p.letter:""}</small><b>${esc(p.name)}</b></div>
-    <button class="go" id="popGo">写真を見る ›</button><button class="x" id="popX" aria-label="とじる">×</button>`;
+  pop.innerHTML=`${p.photos?`<img src="${img(p.photos[0])}" alt="">`:`<span class="noimg">${bldg(COL[p.cat])}</span>`}<div class="t"><small>${CATNAME[p.cat]}${p.letter?" "+p.letter:""}</small><b>${esc(p.name)}</b></div>
+    <button class="go" id="popGo">${p.photos?"写真を見る ›":"くわしく見る ›"}</button><button class="x" id="popX" aria-label="とじる">×</button>`;
   $("#popGo").onclick=()=>goPlace(mapSel);
   $("#popX").onclick=()=>{mapSel=null;drawMapPins();showPop()};
 }
@@ -399,7 +528,7 @@ function endHTML(){
   const items=likes.filter(id=>P[id]);
   return `<div class="leaves"><div class="leaf endleaf">
     <h2>気になった場所</h2>
-    ${items.length?`<ul class="liked">${items.map(id=>`<li><button data-goplace="${id}"><img src="${img(P[id].photos[0])}" alt=""><span><small style="color:var(--muted);font-size:12px">${CATNAME[P[id].cat]}${P[id].letter?" "+P[id].letter:""}</small><br><b>${esc(P[id].name)}</b></span></button></li>`).join("")}</ul>`
+    ${items.length?`<ul class="liked">${items.map(id=>`<li><button data-goplace="${id}">${P[id].photos?`<img src="${img(P[id].photos[0])}" alt="">`:`<span class="noimg">${bldg(COL[P[id].cat])}</span>`}<span><small style="color:var(--muted);font-size:12px">${CATNAME[P[id].cat]}${P[id].letter?" "+P[id].letter:""}</small><br><b>${esc(P[id].name)}</b></span></button></li>`).join("")}</ul>`
       :`<p class="empty">♡をつけた場所がここに並びます。</p>`}
     <p class="credit">千葉工業大学 情報デザイン応用論及び演習 D班</p>
   </div></div>`;
@@ -408,6 +537,7 @@ function spreadHTML(s){
   if(s.id==="cover") return coverHTML();
   if(s.id==="map") return mapHTML();
   if(s.id==="end") return endHTML();
+  if(s.id==="support") return supportHTML();
   const leaf=ids=>`<div class="leaf${s.compact?" compact":""}">${ids.map(id=>placeHTML(id)).join("")}</div>`;
   return `<div class="leaves two">${leaf(s.left)}${leaf(s.right)}</div>`;
 }
